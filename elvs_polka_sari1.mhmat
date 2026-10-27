@@ -1,0 +1,22 @@
+# MakeHuman2 Material definition for polkasari
+name polkasari
+description polkasari material
+
+ambientColor 1.0 1.0 1.0
+diffuseColor 1.0 1.0 1.0
+specularColor 0.5 0.5 0.5
+emissiveColor 1.0 1.0 1.0
+metallicFactor 0.0
+roughnessFactor 0.83
+
+transparent True
+alphaToCoverage True
+backfaceCull False
+
+diffuseTexture clothes/elvs_polka_sari1/sarifabric1_dots.png
+aomapIntensity 1.0
+
+
+shader pbr
+shaderParam litsphereTexture lit_matte.png
+
