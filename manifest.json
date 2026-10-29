@@ -1,3 +1,20 @@
 {
-  "assets": []
+  "assets": [
+    {
+      "id": "elvs_polka_sari1",
+      "name": "Elvis Polka Sari 1",
+      "type": "clothes",
+      "license": "CC-BY",
+      "author": "Elvaerwyn",
+      "description": "A stylized polka dot sari for MakeHuman 2.",
+      "files": [
+        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.mhclo",
+        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.mhmat",
+        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.obj",
+        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.thumb",
+        "assets/clothes/elvs_polka_sari1/largewhitepolkdot.png",
+        "assets/clothes/elvs_polka_sari1/sarifabric1_dots.png"
+      ]
+    }
+  ]
 }
