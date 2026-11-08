@@ -1,20 +1,13 @@
 {
-  "assets": [
-    {
-      "id": "elvs_polka_sari1",
-      "name": "Elvis Polka Sari 1",
+  "packs": {
+    "hm08-elvs_polka_sari1.zip": {
+      "descr": "Elvaerwyn: Elvis Polka Sari 1 - A stylized polka dot clothing kit updated to PBR materials.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/v1.0-sari/hm08-elvs_polka_sari1.zip",
+      "base": "hm08",
+      "thumb": "https://githubusercontent.com",
       "type": "clothes",
-      "license": "CC-BY",
-      "author": "Elvaerwyn",
-      "description": "A stylized polka dot sari for MakeHuman 2.",
-      "files": [
-        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.mhclo",
-        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.mhmat",
-        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.obj",
-        "assets/clothes/elvs_polka_sari1/elvs_polka_sari1.thumb",
-        "assets/clothes/elvs_polka_sari1/largewhitepolkdot.png",
-        "assets/clothes/elvs_polka_sari1/sarifabric1_dots.png"
-      ]
+      "size": 3.42
     }
-  ]
+  }
 }
+
