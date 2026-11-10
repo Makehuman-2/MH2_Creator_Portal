@@ -1,6 +1,8 @@
 name: Format and Index Staging Assets
 
 on:
+  issues:
+    types: [closed]
   pull_request:
     branches:
       - main
