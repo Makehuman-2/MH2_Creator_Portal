@@ -8,26 +8,41 @@ on:
       - main
     types: [opened, synchronize]
 
+permissions:
+  contents: write
+
 jobs:
   organize-assets:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Staging Branch
+      - name: Determine Target Branch
+        id: branch_info
+        run: |
+          if [ "${{ github.event_name }}" == "issues" ]; then
+            echo "target_branch=issue-${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
+            echo "checkout_ref=main" >> $GITHUB_OUTPUT
+          else
+            echo "target_branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+            echo "checkout_ref=${{ github.head_ref }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.head_ref }}
+          ref: ${{ steps.branch_info.outputs.checkout_ref }}
           fetch-depth: 0
+
+      - name: Create Branch if Triggered by Issue
+        if: github.event_name == 'issues'
+        run: |
+          git checkout -b "${{ steps.branch_info.outputs.target_branch }}"
 
       - name: Restructure Root Files to Asset Subfolder
         run: |
-          # Determine category by inspecting files or fallback to generic clothes folder
-          # In a real environment, you can parse the issue text via gh api if needed
-          FOLDER_NAME="assets/clothes/${{ github.head_ref }}"
+          FOLDER_NAME="assets/clothes/${{ steps.branch_info.outputs.target_branch }}"
           mkdir -p "$FOLDER_NAME"
           
-          # Move all loose asset components down into the organized folder
-          # Exclude core github layout components or markdown files
-          find . -maxdepth 1 -type f ! -name "README.md" ! -name "LICENSE" ! -name ".gitignore" -exec mv {} "$FOLDER_NAME/" \;
+          find . -maxdepth 1 -type f ! -name "README.md" ! -name "LICENSE" ! -name ".gitignore" ! -name "manifest.json" -exec mv {} "$FOLDER_NAME/" \;
           
           echo "Organized raw files into: $FOLDER_NAME"
 
@@ -44,12 +59,9 @@ jobs:
           else:
               data = {"assets": []}
 
-          # Scan the new folder structure
-          asset_list = []
           for root, dirs, files in os.walk("assets"):
               if files and not root.endswith("assets"):
                   asset_id = os.path.basename(root)
-                  # Deduplicate if already tracking
                   if any(a["id"] == asset_id for a in data["assets"]):
                       continue
                       
@@ -69,4 +81,4 @@ jobs:
           git config --global user.email "portal-bot@makehuman2.org"
           git add .
           git diff --quiet && git diff --staged --quiet || git commit -m "Automated layout organization & manifest updates"
-          git push origin HEAD:${{ github.head_ref }}
+          git push origin HEAD:${{ steps.branch_info.outputs.target_branch }} --force
