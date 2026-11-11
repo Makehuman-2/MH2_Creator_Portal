@@ -4,9 +4,18 @@
       "descr": "Elvaerwyn: Elvis Polka Sari 1 - A stylized polka dot clothing kit updated to PBR materials.",
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_polka_sari1.zip",
       "base": "hm08",
-      "thumb": "*",
+      "thumb": "",
       "type": "clothes",
       "size": 3.42
+    },
+    "hm08-elvs_ruffled_ch_blouse2.zip": {
+      "descr": "Elvs simple ruffled childrens blouse for girls.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_ruffled_ch_blouse2.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "https://github.com",
+      "type": "clothes",
+      "size": "Unknown"
     }
   }
 }
