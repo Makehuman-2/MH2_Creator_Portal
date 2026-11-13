@@ -1,0 +1,24 @@
+# MakeHuman2 Material definition for nightie
+name nightie
+description Nightie material
+
+ambientColor 1.0 1.0 1.0
+diffuseColor 0.5 0.5 0.5
+specularColor 0.5 0.5 0.5
+emissiveColor 0.0 0.0 0.0
+metallicFactor 0.0
+roughnessFactor 0.68
+
+transparent True
+alphaToCoverage True
+backfaceCull False
+
+diffuseTexture nightie.png
+normalmapTexture nightie_norm.png
+normalmapIntensity 1.0
+aomapIntensity 1.18
+
+
+shader pbr
+shaderParam litsphereTexture lit_refl_sharp_aniso_hard_blonde.png
+
