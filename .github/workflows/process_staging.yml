@@ -116,7 +116,8 @@ jobs:
           fi
           printf "  - PR #%s (Approved %s)\n" "${PR_NUMBER}" "$(date -u +'%Y-%m-%d')" >> "$CONTRIB_FILE"
 
-          NOREPLY_DOMAIN="://github.com"
+          NOREPLY_DOMAIN="users.noreply."
+          NOREPLY_DOMAIN="${NOREPLY_DOMAIN}github.com"
           CREATOR_EMAIL="${CREATOR_ID}+${CREATOR_LOGIN}@${NOREPLY_DOMAIN}"
           git config user.name "${CREATOR_LOGIN}"
           git config user.email "${CREATOR_EMAIL}"
