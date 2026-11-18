@@ -3,6 +3,14 @@ name: Archive to Staging Branch & Credit Contributor on Main
 on:
   pull_request_target:
     types: [labeled, closed]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: 'PR Number'
+        required: true
+      creator_login:
+        description: 'Creator GitHub Username'
+        required: true
 
 permissions:
   contents: write
@@ -11,8 +19,8 @@ permissions:
 jobs:
   approve-and-archive:
     if: >
-      (github.event.action == 'labeled' && github.event.label.name == 'approved') ||
-      (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'approved') && github.event.pull_request.merged == false)
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.action == 'labeled' && github.event.label.name == 'approved')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Main Repository
@@ -23,9 +31,10 @@ jobs:
       - name: Fetch PR Files, Zip to Release, Archive & Credit Contributor
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-          CREATOR_LOGIN: ${{ github.event.pull_request.user.login }}
-          CREATOR_ID: ${{ github.event.pull_request.user.id }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          CREATOR_LOGIN: ${{ github.event.pull_request.user.login || inputs.creator_login }}
+          CREATOR_ID: ${{ github.event.pull_request.user.id || '0' }}
+
         run: |
           gh release view portal-assets >/dev/null 2>&1 || gh release create portal-assets --title "Creator Portal Assets" --notes "Automated community uploads"
 
@@ -33,7 +42,8 @@ jobs:
 
           # 1. Archive raw files onto staging-archive branch (never main)
           git checkout -B staging-archive
-          git checkout pr-${PR_NUMBER} -- assets/
+          git checkout pr-${PR_NUMBER} -- assets/ 2>/dev/null || true
+
           git config user.name "MH2 Portal Bot"
           git config user.email "portal-bot@makehuman2.org"
           git add assets/
@@ -74,14 +84,14 @@ jobs:
 
               subprocess.run(["gh", "release", "upload", "portal-assets", zip_name, "--clobber"], check=True)
               repo = os.environ["GITHUB_REPOSITORY"]
-              entry["url"] = f"https://github.com{repo}/releases/download/portal-assets/{zip_name}"
+              entry["url"] = f"https://github.com/{repo}/releases/download/portal-assets/{zip_name}"
 
               thumb_file = next(
                   (f for f in asset_files if f.lower().endswith((".thumb", ".png", ".jpg", ".jpeg")) and ("thumb" in f.lower() or "preview" in f.lower() or f.lower().endswith(".thumb"))),
                   ""
               )
               if thumb_file:
-                  entry["thumb"] = f"https://githubusercontent.com{repo}/staging-archive/{root.replace(os.sep, '/')}/{thumb_file}"
+                  entry["thumb"] = f"https://raw.githubusercontent.com/{repo}/staging-archive/{root.replace(os.sep, '/')}/{thumb_file}"
 
               entry.pop("files", None)
               existing[aid] = entry
@@ -98,12 +108,14 @@ jobs:
 
           mkdir -p contributors
           CONTRIB_FILE="contributors/${CREATOR_LOGIN}.md"
+          GH_BASE="https://github.com"
           if [ ! -f "$CONTRIB_FILE" ]; then
-            printf "# %s\n\n- **GitHub:** [@%s](https://github.com%s)\n- **Approved Submissions:**\n" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" > "$CONTRIB_FILE"
+            printf "# %s\n\n- **GitHub:** [@%s](%s/%s)\n- **Approved Submissions:**\n" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" "${GH_BASE}" "${CREATOR_LOGIN}" > "$CONTRIB_FILE"
           fi
           printf "  - PR #%s (Approved %s)\n" "${PR_NUMBER}" "$(date -u +'%Y-%m-%d')" >> "$CONTRIB_FILE"
 
-          CREATOR_EMAIL="${CREATOR_ID}+${CREATOR_LOGIN}@://github.com"
+          NOREPLY_DOMAIN="users.noreply.github.com"
+          CREATOR_EMAIL="${CREATOR_ID}+${CREATOR_LOGIN}@${NOREPLY_DOMAIN}"
           git config user.name "${CREATOR_LOGIN}"
           git config user.email "${CREATOR_EMAIL}"
           git add manifest.json "$CONTRIB_FILE"
@@ -111,4 +123,4 @@ jobs:
           git push origin main
 
           # 4. Close the PR automatically with a thank-you note
-          gh pr close ${PR_NUMBER} --comment "✅ Approved! Your asset has been archived to \`staging-archive\`, published to the Creator Portal release feed, and credited in \`contributors/${CREATOR_LOGIN}.md\`."
+          gh pr close ${PR_NUMBER} --comment "✅ Approved! Your asset has been archived to staging-archive, published to the Creator Portal release feed, and credited in contributors/${CREATOR_LOGIN}.md." 2>/dev/null || true
