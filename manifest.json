@@ -13,9 +13,9 @@
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_ruffled_ch_blouse2.zip",
       "base": "hm08",
       "license": "CC-BY",
-      "thumb": "https://github.com",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/ruffleblousechild2.thumb",
       "type": "clothes",
-      "size": "Unknown"
+      "size": "4.96"
     },
     "hm08-punks_tester_nightie.zip": {
       "descr": "Punks test nightie for female models.",
@@ -31,8 +31,8 @@
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/elvs_magic_Princess_wand1.zip",
       "base": "common",
       "license": "CC-BY",
-      "thumb": "",
-      "type": "props",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/magic_princesswand1.thumb",
+      "type": "clothes",
       "size": 2.25
     },
     "hm08-clutch_boxer_briefs.zip": {
@@ -49,7 +49,7 @@
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-Elvs_circle_chain_anklet1.zip",
       "base": "hm08",
       "license": "CC-BY",
-      "thumb": "",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/ankopill.png",
       "type": "clothes",
       "size": 0.74
     },
@@ -58,9 +58,20 @@
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-PDminidress02.zip",
       "base": "hm08",
       "license": "CC-BY",
-      "thumb": "",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/minidress02.thumb",
       "type": "clothes",
       "size": 3.26
+      },
+    "hm08-elvs_short_mandarin_dress1.zip": {
+      "descr": "Elvs Short Mandarin Dress 1 - A short mandarin-style dress for female models.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_short_mandarin_dress1.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/mandarinminidresss.thumb",
+      "type": "clothes",
+      "size": 1.89
+    },
+
     }
   },
   "assets": []
