@@ -91,7 +91,8 @@ jobs:
                   ""
               )
               if thumb_file:
-                  entry["thumb"] = f"https://raw.githubusercontent.com/{repo}/staging-archive/{root.replace(os.sep, '/')}/{thumb_file}"
+                  clean_root = root.replace("\\", "/")
+                  entry["thumb"] = f"https://raw.githubusercontent.com/{repo}/staging-archive/{clean_root}/{thumb_file}"
 
               entry.pop("files", None)
               existing[aid] = entry
