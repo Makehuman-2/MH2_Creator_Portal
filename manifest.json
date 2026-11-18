@@ -26,9 +26,9 @@
       "type": "clothes",
       "size": 7.76
     },
-    "elvs_magic_Princess_wand1.zip": {
+    "hm08-elvs_magic_Princess_wand1.zip": {
       "descr": "Elvs Magic Princess Wand 1 - A stylized prop wand for MakeHuman 2.",
-      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/elvs_magic_Princess_wand1.zip",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_magic_Princess_wand1.zip",
       "base": "common",
       "license": "CC-BY",
       "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/magic_princesswand1.thumb",
