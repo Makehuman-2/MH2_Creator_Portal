@@ -39,11 +39,11 @@ jobs:
 
         run: |
           gh release view portal-assets >/dev/null 2>&1 || gh release create portal-assets --title "Creator Portal Assets" --notes "Automated community uploads"
-
           # 1. Fetch PR files into a temporary directory without touching main or creating extra branches
           git fetch origin pull/${PR_NUMBER}/head:pr-${PR_NUMBER}
           mkdir -p /tmp/pr_assets /tmp/resource_thumbs
           git --work-tree=/tmp/pr_assets checkout pr-${PR_NUMBER} -- assets/ 2>/dev/null || true
+          git reset HEAD assets/ 2>/dev/null || true
 
           # 2. Package into Release, copy thumbnail for resource/, & build manifest entry
           python -c '
