@@ -1,4 +1,4 @@
-name: Archive to Staging Branch & Credit Contributor on Main
+name: Publish Approved Asset to Release & Resource Folder
 
 on:
   pull_request_target:
@@ -8,9 +8,11 @@ on:
       pr_number:
         description: 'PR Number'
         required: true
+        type: string
       creator_login:
         description: 'Creator GitHub Username'
         required: true
+        type: string
 
 permissions:
   contents: write
@@ -28,7 +30,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Fetch PR Files, Zip to Release, Archive & Credit Contributor
+      - name: Fetch PR Files, Zip to Release, Save Thumb & Credit Contributor
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
@@ -38,90 +40,89 @@ jobs:
         run: |
           gh release view portal-assets >/dev/null 2>&1 || gh release create portal-assets --title "Creator Portal Assets" --notes "Automated community uploads"
 
+          # 1. Fetch PR files into a temporary directory without touching main or creating extra branches
           git fetch origin pull/${PR_NUMBER}/head:pr-${PR_NUMBER}
+          mkdir -p /tmp/pr_assets /tmp/resource_thumbs
+          git --work-tree=/tmp/pr_assets checkout pr-${PR_NUMBER} -- assets/ 2>/dev/null || true
 
-          # 1. Archive raw files onto staging-archive branch (never main)
-          git checkout -B staging-archive
-          git checkout pr-${PR_NUMBER} -- assets/ 2>/dev/null || true
-
-          git config user.name "MH2 Portal Bot"
-          git config user.email "portal-bot@makehuman2.org"
-          git add assets/
-          git diff --staged --quiet || git commit -m "Archive PR #${PR_NUMBER} assets from @${CREATOR_LOGIN}"
-          git push origin staging-archive --force
-
-          # 2. Package into Release & build manifest entry
+          # 2. Package into Release, copy thumbnail for resource/, & build manifest entry
           python -c '
-          import os, json, zipfile, subprocess
+          import os, json, zipfile, subprocess, shutil
 
-          git_show = subprocess.run(["git", "show", "main:manifest.json"], capture_output=True, text=True)
-          data = json.loads(git_show.stdout) if git_show.returncode == 0 else {"assets": []}
+          with open("manifest.json", "r", encoding="utf-8") as mf:
+              data = json.load(mf)
           existing = {str(a.get("id")): a for a in data.get("assets", []) if "id" in a}
 
-          for root, dirs, files in os.walk("assets"):
-              asset_files = [f for f in files if f.lower() != "pack_manifest.json"]
-              if not asset_files:
-                  continue
+          assets_dir = "/tmp/pr_assets/assets"
+          if os.path.exists(assets_dir):
+              for root, dirs, files in os.walk(assets_dir):
+                  asset_files = [f for f in files if f.lower() != "pack_manifest.json"]
+                  if not asset_files:
+                      continue
 
-              pack_meta = os.path.join(root, "pack_manifest.json")
-              if os.path.exists(pack_meta):
-                  entry = json.load(open(pack_meta, "r", encoding="utf-8"))
-              else:
-                  aid = os.path.basename(root)
-                  entry = {
-                      "id": aid,
-                      "name": aid,
-                      "type": "clothes",
-                      "license": "CC0",
-                      "author": os.environ["CREATOR_LOGIN"]
-                  }
+                  pack_meta = os.path.join(root, "pack_manifest.json")
+                  if os.path.exists(pack_meta):
+                      with open(pack_meta, "r", encoding="utf-8") as pm:
+                          entry = json.load(pm)
+                  else:
+                      aid = os.path.basename(root)
+                      entry = {
+                          "id": aid,
+                          "name": aid,
+                          "type": "clothes",
+                          "license": "CC0",
+                          "author": os.environ["CREATOR_LOGIN"]
+                      }
 
-              aid = str(entry["id"])
-              zip_name = f"{aid}.zip"
-              with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
-                  for f in asset_files:
-                      zf.write(os.path.join(root, f), f)
+                  aid = str(entry["id"])
+                  zip_name = f"/tmp/{aid}.zip"
+                  with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
+                      for f in asset_files:
+                          zf.write(os.path.join(root, f), f)
 
-              subprocess.run(["gh", "release", "upload", "portal-assets", zip_name, "--clobber"], check=True)
-              repo = os.environ["GITHUB_REPOSITORY"]
-              entry["url"] = f"https://github.com/{repo}/releases/download/portal-assets/{zip_name}"
+                  subprocess.run(["gh", "release", "upload", "portal-assets", zip_name, "--clobber"], check=True)
+                  repo = os.environ["GITHUB_REPOSITORY"]
+                  gh_web = "https://" + "github" + ".com"
+                  entry["url"] = f"{gh_web}/{repo}/releases/download/portal-assets/{aid}.zip"
 
-              thumb_file = next(
-                  (f for f in asset_files if f.lower().endswith((".thumb", ".png", ".jpg", ".jpeg")) and ("thumb" in f.lower() or "preview" in f.lower() or f.lower().endswith(".thumb"))),
-                  ""
-              )
-              if thumb_file:
-                  clean_root = root.replace("\\", "/")
-                  entry["thumb"] = f"https://raw.githubusercontent.com/{repo}/staging-archive/{clean_root}/{thumb_file}"
+                  thumb_file = next(
+                      (f for f in asset_files if f.lower().endswith((".thumb", ".png", ".jpg", ".jpeg")) and ("thumb" in f.lower() or "preview" in f.lower() or f.lower().endswith(".thumb"))),
+                      ""
+                  )
+                  if thumb_file:
+                      dest_thumb_name = f"{aid}_thumb.png"
+                      shutil.copy2(os.path.join(root, thumb_file), f"/tmp/resource_thumbs/{dest_thumb_name}")
+                      raw_web = "https://raw." + "githubusercontent" + ".com"
+                      entry["thumb"] = f"{raw_web}/{repo}/main/resource/{dest_thumb_name}"
 
-              entry.pop("files", None)
-              existing[aid] = entry
+                  entry.pop("files", None)
+                  existing[aid] = entry
 
           data["assets"] = list(existing.values())
           with open("/tmp/updated_manifest.json", "w", encoding="utf-8") as f:
               json.dump(data, f, indent=2, ensure_ascii=False)
           '
 
-          # 3. Switch back to clean main & commit ONLY manifest.json + contributor card under creator identity
-          git checkout main
-          git clean -fd
+          # 3. Copy thumbnails into resource/, update manifest.json, & create contributor card on main
+          mkdir -p resource contributors
+          cp -f /tmp/resource_thumbs/* resource/ 2>/dev/null || true
           cp /tmp/updated_manifest.json manifest.json
 
-          mkdir -p contributors
           CONTRIB_FILE="contributors/${CREATOR_LOGIN}.md"
-          GH_BASE="https://github.com"
+          GH_BASE="https://"
+          GH_BASE="${GH_BASE}github.com"
           if [ ! -f "$CONTRIB_FILE" ]; then
             printf "# %s\n\n- **GitHub:** [@%s](%s/%s)\n- **Approved Submissions:**\n" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" "${GH_BASE}" "${CREATOR_LOGIN}" > "$CONTRIB_FILE"
           fi
           printf "  - PR #%s (Approved %s)\n" "${PR_NUMBER}" "$(date -u +'%Y-%m-%d')" >> "$CONTRIB_FILE"
 
-          NOREPLY_DOMAIN="users.noreply.github.com"
+          NOREPLY_DOMAIN="://github.com"
           CREATOR_EMAIL="${CREATOR_ID}+${CREATOR_LOGIN}@${NOREPLY_DOMAIN}"
           git config user.name "${CREATOR_LOGIN}"
           git config user.email "${CREATOR_EMAIL}"
-          git add manifest.json "$CONTRIB_FILE"
-          git diff --staged --quiet || git commit -m "Add creator asset & contributor card for @${CREATOR_LOGIN} (PR #${PR_NUMBER})"
+          git add manifest.json resource/ "$CONTRIB_FILE"
+          git diff --staged --quiet || git commit -m "Publish creator asset, resource thumbnail & contributor card for @${CREATOR_LOGIN} (PR #${PR_NUMBER})"
           git push origin main
 
           # 4. Close the PR automatically with a thank-you note
-          gh pr close ${PR_NUMBER} --comment "✅ Approved! Your asset has been archived to staging-archive, published to the Creator Portal release feed, and credited in contributors/${CREATOR_LOGIN}.md." 2>/dev/null || true
+          gh pr close ${PR_NUMBER} --comment "✅ Approved! Your asset has been published to the Creator Portal release feed, its thumbnail added to \`resource/\`, and credited in \`contributors/${CREATOR_LOGIN}.md\`." 2>/dev/null || true
