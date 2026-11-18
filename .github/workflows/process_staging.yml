@@ -1,52 +1,23 @@
-name: Format and Index Staging Assets
+name: Index Merged Creator Assets
 
 on:
-  issues:
-    types: [closed]
-  pull_request:
+  push:
     branches:
       - main
-    types: [opened, synchronize]
+    paths:
+      - 'assets/**'
 
 permissions:
   contents: write
 
 jobs:
-  organize-assets:
+  update-manifest:
     runs-on: ubuntu-latest
     steps:
-      - name: Determine Target Branch
-        id: branch_info
-        run: |
-          if [ "${{ github.event_name }}" == "issues" ]; then
-            echo "target_branch=issue-${{ github.event.issue.number }}" >> $GITHUB_OUTPUT
-            echo "checkout_ref=main" >> $GITHUB_OUTPUT
-          else
-            echo "target_branch=${{ github.head_ref }}" >> $GITHUB_OUTPUT
-            echo "checkout_ref=${{ github.head_ref }}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Checkout Repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ steps.branch_info.outputs.checkout_ref }}
-          fetch-depth: 0
 
-      - name: Create Branch if Triggered by Issue
-        if: github.event_name == 'issues'
-        run: |
-          git checkout -b "${{ steps.branch_info.outputs.target_branch }}"
-
-      - name: Restructure Root Files to Asset Subfolder
-        run: |
-          FOLDER_NAME="assets/clothes/${{ steps.branch_info.outputs.target_branch }}"
-          mkdir -p "$FOLDER_NAME"
-          
-          find . -maxdepth 1 -type f ! -name "README.md" ! -name "LICENSE" ! -name ".gitignore" ! -name "manifest.json" -exec mv {} "$FOLDER_NAME/" \;
-          
-          echo "Organized raw files into: $FOLDER_NAME"
-
-      - name: Generate Global Community Manifest
+      - name: Update manifest.json from pack_manifest.json
         run: |
           python -c '
           import os
@@ -54,31 +25,52 @@ jobs:
 
           manifest_path = "manifest.json"
           if os.path.exists(manifest_path):
-              with open(manifest_path, "r") as f:
+              with open(manifest_path, "r", encoding="utf-8") as f:
                   data = json.load(f)
           else:
               data = {"assets": []}
 
-          for root, dirs, files in os.walk("assets"):
-              if files and not root.endswith("assets"):
-                  asset_id = os.path.basename(root)
-                  if any(a["id"] == asset_id for a in data["assets"]):
-                      continue
-                      
-                  asset_entry = {
-                      "id": asset_id,
-                      "files": [os.path.join(root, f).replace("\\", "/") for f in files]
-                  }
-                  data["assets"].append(asset_entry)
+          existing_by_id = {str(a.get("id")): a for a in data.get("assets", []) if "id" in a}
 
-          with open(manifest_path, "w") as f:
-              json.dump(data, f, indent=2)
+          for root, dirs, files in os.walk("assets"):
+              asset_files = [
+                  os.path.join(root, f).replace("\\", "/")
+                  for f in files if f.lower() != "pack_manifest.json"
+              ]
+              if not asset_files:
+                  continue
+
+              pack_meta_path = os.path.join(root, "pack_manifest.json")
+              if os.path.exists(pack_meta_path):
+                  with open(pack_meta_path, "r", encoding="utf-8") as pm:
+                      entry = json.load(pm)
+                  entry["files"] = asset_files
+              else:
+                  asset_id = os.path.basename(root)
+                  rel_parts = root.replace("\\", "/").split("/")
+                  inferred_type = rel_parts[1] if len(rel_parts) >= 3 else "clothes"
+                  entry = existing_by_id.get(asset_id, {
+                      "id": asset_id,
+                      "name": asset_id.replace("_", " ").title(),
+                      "type": inferred_type,
+                      "license": "CC0",
+                      "description": "Community uploaded asset.",
+                      "author": "Community Creator"
+                  })
+                  entry["files"] = asset_files
+
+              existing_by_id[str(entry["id"])] = entry
+
+          data["assets"] = list(existing_by_id.values())
+          with open(manifest_path, "w", encoding="utf-8") as f:
+              json.dump(data, f, indent=2, ensure_ascii=False)
           '
 
-      - name: Commit Structural Organization Changes
+      - name: Commit Updated manifest.json
         run: |
           git config --global user.name "MH2 Portal Bot"
           git config --global user.email "portal-bot@makehuman2.org"
-          git add .
-          git diff --quiet && git diff --staged --quiet || git commit -m "Automated layout organization & manifest updates"
-          git push origin HEAD:${{ steps.branch_info.outputs.target_branch }} --force
+          git add manifest.json
+          git diff --quiet && git diff --staged --quiet || git commit -m "Automated manifest.json index update"
+          git push
+
