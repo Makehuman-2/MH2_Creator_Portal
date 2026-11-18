@@ -1,76 +1,114 @@
-name: Index Merged Creator Assets
+name: Archive to Staging Branch & Credit Contributor on Main
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - 'assets/**'
+  pull_request_target:
+    types: [labeled, closed]
 
 permissions:
   contents: write
+  pull-requests: write
 
 jobs:
-  update-manifest:
+  approve-and-archive:
+    if: >
+      (github.event.action == 'labeled' && github.event.label.name == 'approved') ||
+      (github.event.action == 'closed' && contains(github.event.pull_request.labels.*.name, 'approved') && github.event.pull_request.merged == false)
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
+      - name: Checkout Main Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-      - name: Update manifest.json from pack_manifest.json
+      - name: Fetch PR Files, Zip to Release, Archive & Credit Contributor
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          CREATOR_LOGIN: ${{ github.event.pull_request.user.login }}
+          CREATOR_ID: ${{ github.event.pull_request.user.id }}
         run: |
+          gh release view portal-assets >/dev/null 2>&1 || gh release create portal-assets --title "Creator Portal Assets" --notes "Automated community uploads"
+
+          git fetch origin pull/${PR_NUMBER}/head:pr-${PR_NUMBER}
+
+          # 1. Archive raw files onto staging-archive branch (never main)
+          git checkout -B staging-archive
+          git checkout pr-${PR_NUMBER} -- assets/
+          git config user.name "MH2 Portal Bot"
+          git config user.email "portal-bot@makehuman2.org"
+          git add assets/
+          git diff --staged --quiet || git commit -m "Archive PR #${PR_NUMBER} assets from @${CREATOR_LOGIN}"
+          git push origin staging-archive --force
+
+          # 2. Package into Release & build manifest entry
           python -c '
-          import os
-          import json
+          import os, json, zipfile, subprocess
 
-          manifest_path = "manifest.json"
-          if os.path.exists(manifest_path):
-              with open(manifest_path, "r", encoding="utf-8") as f:
-                  data = json.load(f)
-          else:
-              data = {"assets": []}
-
-          existing_by_id = {str(a.get("id")): a for a in data.get("assets", []) if "id" in a}
+          git_show = subprocess.run(["git", "show", "main:manifest.json"], capture_output=True, text=True)
+          data = json.loads(git_show.stdout) if git_show.returncode == 0 else {"assets": []}
+          existing = {str(a.get("id")): a for a in data.get("assets", []) if "id" in a}
 
           for root, dirs, files in os.walk("assets"):
-              asset_files = [
-                  os.path.join(root, f).replace("\\", "/")
-                  for f in files if f.lower() != "pack_manifest.json"
-              ]
+              asset_files = [f for f in files if f.lower() != "pack_manifest.json"]
               if not asset_files:
                   continue
 
-              pack_meta_path = os.path.join(root, "pack_manifest.json")
-              if os.path.exists(pack_meta_path):
-                  with open(pack_meta_path, "r", encoding="utf-8") as pm:
-                      entry = json.load(pm)
-                  entry["files"] = asset_files
+              pack_meta = os.path.join(root, "pack_manifest.json")
+              if os.path.exists(pack_meta):
+                  entry = json.load(open(pack_meta, "r", encoding="utf-8"))
               else:
-                  asset_id = os.path.basename(root)
-                  rel_parts = root.replace("\\", "/").split("/")
-                  inferred_type = rel_parts[1] if len(rel_parts) >= 3 else "clothes"
-                  entry = existing_by_id.get(asset_id, {
-                      "id": asset_id,
-                      "name": asset_id.replace("_", " ").title(),
-                      "type": inferred_type,
+                  aid = os.path.basename(root)
+                  entry = {
+                      "id": aid,
+                      "name": aid,
+                      "type": "clothes",
                       "license": "CC0",
-                      "description": "Community uploaded asset.",
-                      "author": "Community Creator"
-                  })
-                  entry["files"] = asset_files
+                      "author": os.environ["CREATOR_LOGIN"]
+                  }
 
-              existing_by_id[str(entry["id"])] = entry
+              aid = str(entry["id"])
+              zip_name = f"{aid}.zip"
+              with zipfile.ZipFile(zip_name, "w", zipfile.ZIP_DEFLATED) as zf:
+                  for f in asset_files:
+                      zf.write(os.path.join(root, f), f)
 
-          data["assets"] = list(existing_by_id.values())
-          with open(manifest_path, "w", encoding="utf-8") as f:
+              subprocess.run(["gh", "release", "upload", "portal-assets", zip_name, "--clobber"], check=True)
+              repo = os.environ["GITHUB_REPOSITORY"]
+              entry["url"] = f"https://github.com{repo}/releases/download/portal-assets/{zip_name}"
+
+              thumb_file = next(
+                  (f for f in asset_files if f.lower().endswith((".thumb", ".png", ".jpg", ".jpeg")) and ("thumb" in f.lower() or "preview" in f.lower() or f.lower().endswith(".thumb"))),
+                  ""
+              )
+              if thumb_file:
+                  entry["thumb"] = f"https://githubusercontent.com{repo}/staging-archive/{root.replace(os.sep, '/')}/{thumb_file}"
+
+              entry.pop("files", None)
+              existing[aid] = entry
+
+          data["assets"] = list(existing.values())
+          with open("/tmp/updated_manifest.json", "w", encoding="utf-8") as f:
               json.dump(data, f, indent=2, ensure_ascii=False)
           '
 
-      - name: Commit Updated manifest.json
-        run: |
-          git config --global user.name "MH2 Portal Bot"
-          git config --global user.email "portal-bot@makehuman2.org"
-          git add manifest.json
-          git diff --quiet && git diff --staged --quiet || git commit -m "Automated manifest.json index update"
-          git push
+          # 3. Switch back to clean main & commit ONLY manifest.json + contributor card under creator identity
+          git checkout main
+          git clean -fd
+          cp /tmp/updated_manifest.json manifest.json
 
+          mkdir -p contributors
+          CONTRIB_FILE="contributors/${CREATOR_LOGIN}.md"
+          if [ ! -f "$CONTRIB_FILE" ]; then
+            printf "# %s\n\n- **GitHub:** [@%s](https://github.com%s)\n- **Approved Submissions:**\n" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" "${CREATOR_LOGIN}" > "$CONTRIB_FILE"
+          fi
+          printf "  - PR #%s (Approved %s)\n" "${PR_NUMBER}" "$(date -u +'%Y-%m-%d')" >> "$CONTRIB_FILE"
+
+          CREATOR_EMAIL="${CREATOR_ID}+${CREATOR_LOGIN}@://github.com"
+          git config user.name "${CREATOR_LOGIN}"
+          git config user.email "${CREATOR_EMAIL}"
+          git add manifest.json "$CONTRIB_FILE"
+          git diff --staged --quiet || git commit -m "Add creator asset & contributor card for @${CREATOR_LOGIN} (PR #${PR_NUMBER})"
+          git push origin main
+
+          # 4. Close the PR automatically with a thank-you note
+          gh pr close ${PR_NUMBER} --comment "✅ Approved! Your asset has been archived to \`staging-archive\`, published to the Creator Portal release feed, and credited in \`contributors/${CREATOR_LOGIN}.md\`."
