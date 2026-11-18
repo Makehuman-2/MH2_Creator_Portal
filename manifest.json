@@ -25,35 +25,43 @@
       "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/punk_nightie_demo.png",
       "type": "clothes",
       "size": 7.76
+    },
+    "elvs_magic_Princess_wand1.zip": {
+      "descr": "Elvs Magic Princess Wand 1 - A stylized prop wand for MakeHuman 2.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/elvs_magic_Princess_wand1.zip",
+      "base": "common",
+      "license": "CC-BY",
+      "thumb": "",
+      "type": "props",
+      "size": 2.25
+    },
+    "hm08-clutch_boxer_briefs.zip": {
+      "descr": "Clutch_Creator: Boxer briefs for male models.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-clutch_boxer_briefs.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "https://githubusercontent.com",
+      "type": "clothes",
+      "size": 12.0
+    },
+    "hm08-Elvs_circle_chain_anklet1.zip": {
+      "descr": "Clutch_Creator: A simple ankle bracelet for MakeHuman 2 models.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-Elvs_circle_chain_anklet1.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "",
+      "type": "clothes",
+      "size": 0.74
+    },
+    "hm08-PDminidress02.zip": {
+      "descr": "PD Minidress 02 for female models.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-PDminidress02.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "",
+      "type": "clothes",
+      "size": 3.26
     }
   },
-  "assets": [
-    {
-      "id": "elvs_circle_chain_anklet1",
-      "name": "elvs_circle_chain_anklet1",
-      "type": "clothes",
-      "license": "CC-BY",
-      "description": "A simple ankle bracelet for makehuman 2 models.",
-      "author": "Clutch_Creator",
-      "files": [
-        "assets/clothes/elvs_circle_chain_anklet1/chaintex1.png",
-        "assets/clothes/elvs_circle_chain_anklet1/elvs_circle_chain_anklet1.thumb",
-        "assets/clothes/elvs_circle_chain_anklet1/ankopill.png",
-        "assets/clothes/elvs_circle_chain_anklet1/elvs_circle_chain_anklet1.obj",
-        "assets/clothes/elvs_circle_chain_anklet1/elvs_circle_chain_anklet1.mhclo",
-        "assets/clothes/elvs_circle_chain_anklet1/normals.png",
-        "assets/clothes/elvs_circle_chain_anklet1/elvs_circle_chain_anklet1.mhmat"
-      ]
-    },
-    {
-      "id": "clutch_boxer_briefs1",
-      "name": "Clutch_boxer_briefs1",
-      "type": "clothes",
-      "license": "CC-BY",
-      "description": "A pair of boxer briefs for men.",
-      "author": "Clutch_Creator",
-      "url": "https://github.com/Makehuman-2/MH2_Creator_Portal/releases/download/portal-assets/clutch_boxer_briefs1.zip",
-      "thumb": "https://raw.githubusercontent.com/Makehuman-2/MH2_Creator_Portal/main/resource/clutch_boxer_briefs1_thumb.png"
-    }
-  ]
+  "assets": []
 }
