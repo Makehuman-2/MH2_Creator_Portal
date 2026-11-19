@@ -1,0 +1,23 @@
+# MakeHuman2 Material definition for material7219Material
+name material7219Material
+description shaneshirt material
+
+ambientColor 1.0 1.0 1.0
+diffuseColor 0.2941 0.2941 0.2941
+specularColor 0.0258 0.0258 0.0258
+emissiveColor 0.0 0.0 0.0
+metallicFactor 0.0
+roughnessFactor 0.97
+
+transparent False
+alphaToCoverage True
+backfaceCull False
+
+aomapIntensity 1.0
+colorationMethod 1
+colorationColor 0.4706 0.4706 0.4706
+
+
+shader pbr
+
+

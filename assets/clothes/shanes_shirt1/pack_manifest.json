@@ -1,0 +1,16 @@
+{
+    "id": "shanes_shirt1",
+    "name": "shanes_shirt1",
+    "type": "clothes",
+    "license": "CC-BY",
+    "description": "A shirt for male models that buttons down the front, and has long sleeves.",
+    "author": "Clutch_Creates",
+    "files": [
+        "assets/clothes/shanes_shirt1/shaneshirt.mhclo",
+        "assets/clothes/shanes_shirt1/shaneshirt.mhmat",
+        "assets/clothes/shanes_shirt1/shaneshirt.obj",
+        "assets/clothes/shanes_shirt1/shaneshirt.thumb",
+        "assets/clothes/shanes_shirt1/shaneshirt1.mhmat",
+        "assets/clothes/shanes_shirt1/shaneshirt1.thumb"
+    ]
+}
