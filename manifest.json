@@ -62,6 +62,15 @@
       "type": "clothes",
       "size": 3.26
     },
+    "hm08-PD_lingerie-bottom01.zip": {
+      "descr": "PD Lingerie bottom 01 for female models.",
+      "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-PD_lingerie-bottom01.zip",
+      "base": "hm08",
+      "license": "CC-BY",
+      "thumb": "https://github.com/Makehuman-2/MH2_Creator_Portal/blob/main/resource/ling_bot1.thumb",
+      "type": "clothes",
+      "size": 1.13
+    },
     "hm08-elvs_short_mandarin_dress1.zip": {
       "descr": "Elvs Short Mandarin Dress 1 - A short mandarin-style dress for female models.",
       "url": "Makehuman-2/MH2_Creator_Portal/releases/download/cc-by/hm08-elvs_short_mandarin_dress1.zip",
